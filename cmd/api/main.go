@@ -4,23 +4,22 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"hello-http/internal/config"
 )
 
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if len(value) != 0 {
-		return value
-	}
-	return defaultValue
-}
-
 func main() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
+
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		body := map[string]string{"status": "ok"}
 		jsonBody, err := json.Marshal(body)
@@ -31,8 +30,8 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonBody)
 	})
-	port := ":" + getEnv("PORT", "8080")
-	err := http.ListenAndServe(port, router)
+
+	err = http.ListenAndServe(":"+cfg.Port, router)
 	if err != nil {
 		log.Fatal(err)
 	}
